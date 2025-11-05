@@ -1,0 +1,27 @@
+# compose.yaml
+services:
+  lab-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CUDA_ARCHS: "75"                 # T4なら 75 / RTX30台は 86 など
+    image: gguf:lab-gpuS
+    container_name: gguf-lab-gpu
+    env_file:
+      - .env                             # JUPYTER_TOKEN をここで読み込み
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - JUPYTER_PORT=8888
+      - JUPYTER_ROOT_DIR=/workspace/notebooks
+    ports:
+      - "8888:8888"                      # Jupyter
+      - "8000:8000"                      # llama-server
+    volumes:
+      - ./workspace:/workspace           # ←カレント直下に作られる
+      - ./ccache:/ccache                 # コンパイルキャッシュ（任意）
+    shm_size: "2g"
+    gpus: all                            # Docker 20.10+ / Compose v2 で有効
+    command: ["bash","-lc","start-jupyter"]
+    restart: unless-stopped
